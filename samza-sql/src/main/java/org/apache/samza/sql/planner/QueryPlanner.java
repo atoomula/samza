@@ -25,9 +25,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
+import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.jdbc.CalciteConnection;
+import org.apache.calcite.jdbc.Driver;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelTraitDef;
@@ -39,6 +43,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
@@ -52,9 +57,12 @@ import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
+import org.apache.commons.lang.Validate;
 import org.apache.samza.SamzaException;
 import org.apache.samza.sql.data.SamzaSqlRelMessage;
 import org.apache.samza.sql.interfaces.RelSchemaProvider;
+import org.apache.samza.sql.interfaces.SamzaJavaTypeFactoryImpl;
+import org.apache.samza.sql.interfaces.SamzaSqlDriver;
 import org.apache.samza.sql.interfaces.SqlIOConfig;
 import org.apache.samza.sql.interfaces.UdfMetadata;
 import org.slf4j.Logger;
@@ -84,7 +92,11 @@ public class QueryPlanner {
 
   public RelRoot plan(String query) {
     try {
-      Connection connection = DriverManager.getConnection("jdbc:calcite:");
+      JavaTypeFactory typeFactory = new SamzaJavaTypeFactoryImpl();
+      SamzaSqlDriver driver = new SamzaSqlDriver(typeFactory);
+      DriverManager.deregisterDriver(DriverManager.getDriver("jdbc:calcite:"));
+      DriverManager.registerDriver(driver);
+      Connection connection = driver.connect("jdbc:calcite:", new Properties());
       CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
       SchemaPlus rootSchema = calciteConnection.getRootSchema();
 
@@ -123,22 +135,26 @@ public class QueryPlanner {
       sqlOperatorTables.add(new SamzaSqlOperatorTable());
       sqlOperatorTables.add(new SamzaSqlUdfOperatorTable(samzaSqlFunctions));
 
+      Properties props = new Properties();
+      props.setProperty("conformance", "DEFAULT");
       FrameworkConfig frameworkConfig = Frameworks.newConfigBuilder()
           .parserConfig(SqlParser.configBuilder().setLex(Lex.JAVA).build())
           .defaultSchema(rootSchema)
           .operatorTable(new ChainedSqlOperatorTable(sqlOperatorTables))
           .traitDefs(traitDefs)
-          .context(Contexts.EMPTY_CONTEXT)
+          .context(Contexts.of(new CalciteConnectionConfigImpl(props)))
           .costFactory(null)
+          .typeSystem(RelDataTypeSystem.DEFAULT)
           .build();
       Planner planner = Frameworks.getPlanner(frameworkConfig);
 
       SqlNode sql = planner.parse(query);
       SqlNode validatedSql = planner.validate(sql);
       RelRoot relRoot = planner.rel(validatedSql);
+      Validate.isTrue(relRoot.project().getInputs().size() == 1, "SQL query should start with \"INSERT INTO\"");
       LOG.info("query plan:\n" + sql.toString());
-      LOG.info("relational graph:");
-      printRelGraph(relRoot.project());
+      LOG.info("relational graph for select query:");
+      printRelGraph(relRoot.project().getInput(0));
       return relRoot;
     } catch (Exception e) {
       LOG.error("Query planner failed with exception.", e);

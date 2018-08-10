@@ -160,6 +160,7 @@ public class TestExecutionPlanner {
   private StreamGraphSpec createStreamGraphWithJoinAndWindow() {
 
     StreamGraphSpec graphSpec = new StreamGraphSpec(runner, config);
+    /*
     MessageStream<KV<Object, Object>> messageStream1 =
         graphSpec.<KV<Object, Object>>getInputStream("input1")
             .map(m -> m);
@@ -198,6 +199,7 @@ public class TestExecutionPlanner {
             (JoinFunction<Object, KV<Object, Object>, KV<Object, Object>, KV<Object, Object>>) mock(JoinFunction.class),
             mock(Serde.class), mock(Serde.class), mock(Serde.class), Duration.ofMillis(252), "j3")
         .sendTo(output2);
+        */
 
     return graphSpec;
   }

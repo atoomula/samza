@@ -92,35 +92,27 @@ public class SamzaSqlApplicationConfig {
 
   private final Map<String, SqlIOConfig> inputSystemStreamConfigBySource;
   private final Map<String, SqlIOConfig> outputSystemStreamConfigsBySource;
+  private final Map<String, SqlIOConfig> systemStreamConfigsBySource;
 
-  private final List<String> sql;
-
-  private final List<QueryInfo> queryInfo;
+  // private final List<QueryInfo> queryInfo;
 
   private final long windowDurationMs;
 
-  public SamzaSqlApplicationConfig(Config staticConfig) {
-
-    sql = fetchSqlFromConfig(staticConfig);
-
-    queryInfo = fetchQueryInfo(sql);
+  public SamzaSqlApplicationConfig(Config staticConfig, Set<String> inputSystemStreams,
+      Set<String> outputSystemStreams) {
 
     ioResolver = createIOResolver(staticConfig);
 
-    udfResolver = createUdfResolver(staticConfig);
-    udfMetadata = udfResolver.getUdfs();
-
-    inputSystemStreamConfigBySource = queryInfo.stream()
-        .map(QueryInfo::getSources)
-        .flatMap(Collection::stream)
+    inputSystemStreamConfigBySource = inputSystemStreams.stream()
         .collect(Collectors.toMap(Function.identity(), src -> ioResolver.fetchSourceInfo(src)));
 
-    Set<SqlIOConfig> systemStreamConfigs = new HashSet<>(inputSystemStreamConfigBySource.values());
-
-    outputSystemStreamConfigsBySource = queryInfo.stream()
-        .map(QueryInfo::getSink)
+    outputSystemStreamConfigsBySource = outputSystemStreams.stream()
         .collect(Collectors.toMap(Function.identity(), x -> ioResolver.fetchSinkInfo(x)));
-    systemStreamConfigs.addAll(outputSystemStreamConfigsBySource.values());
+
+    systemStreamConfigsBySource = new HashMap<>(inputSystemStreamConfigBySource);
+    systemStreamConfigsBySource.putAll(outputSystemStreamConfigsBySource);
+
+    Set<SqlIOConfig> systemStreamConfigs = new HashSet<>(systemStreamConfigsBySource.values());
 
     relSchemaProvidersBySource = systemStreamConfigs.stream()
         .collect(Collectors.toMap(SqlIOConfig::getSource,
@@ -134,7 +126,14 @@ public class SamzaSqlApplicationConfig {
                 CFG_FMT_SAMZA_REL_CONVERTER_DOMAIN, (o, c) -> ((SamzaRelConverterFactory) o).create(x.getSystemStream(),
                     relSchemaProvidersBySource.get(x.getSource()), c))));
 
+    udfResolver = createUdfResolver(staticConfig);
+    udfMetadata = udfResolver.getUdfs();
+
     windowDurationMs = staticConfig.getLong(CFG_GROUPBY_WINDOW_DURATION_MS, DEFAULT_GROUPBY_WINDOW_DURATION_MS);
+  }
+
+  public SamzaSqlApplicationConfig(Config staticConfig) {
+    this(staticConfig, null, null);
   }
 
   private static <T> T initializePlugin(String pluginName, String plugin, Config staticConfig,
@@ -222,12 +221,8 @@ public class SamzaSqlApplicationConfig {
     return ret;
   }
 
-  public List<String> getSql() {
-    return sql;
-  }
-
   public List<QueryInfo> getQueryInfo() {
-    return queryInfo;
+    return null;
   }
 
   public Collection<UdfMetadata> getUdfMetadata() {
@@ -240,6 +235,10 @@ public class SamzaSqlApplicationConfig {
 
   public Map<String, SqlIOConfig> getOutputSystemStreamConfigsBySource() {
     return outputSystemStreamConfigsBySource;
+  }
+
+  public Map<String, SqlIOConfig> getSystemStreamConfigsBySource() {
+    return systemStreamConfigsBySource;
   }
 
   public Map<String, SamzaRelConverter> getSamzaRelConverters() {
