@@ -2333,6 +2333,7 @@
                 </tr>
 
                 <tr>
+<<<<<<< HEAD
                     <th colspan="3" class="section" id="eventhub">
                         Using <a href="https://azure.microsoft.com/en-us/services/event-hubs/">EventHubs</a> for input and output streams<br>
                         <span class="subtitle">
@@ -2438,6 +2439,8 @@
                 </tr>
 
                 <tr>
+=======
+>>>>>>> 95781c0f2c6d1ef1eee0171f5b0e15a23af40f24
                     <th colspan="3" class="section" id="kinesis">
                         Using <a href="https://aws.amazon.com/kinesis/">Kinesis</a> for input streams<br>
                         <span class="subtitle">
@@ -2449,6 +2452,7 @@
                 </tr>
 
                 <tr>
+<<<<<<< HEAD
                     <td class="property" id="kinesis-stream-region">systems.<span class="system">system-name</span>.<br>streams.<span class="stream">stream-name</span>.<br>aws.region</td>
                     <td class="default"></td>
                     <td class="description">Region of the associated <span class="stream">stream-name</span>. Required to access the Kinesis data stream.</td>
@@ -2470,6 +2474,29 @@
                     <td class="property" id="kinesis-stream-aws-kcl-configs">systems.<span class="system">system-name</span>.<br>streams.<span class="stream">stream-name</span>.<br>aws.kcl.*</td>
                     <td class="default"></td>
                     <td class="description"><a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/src/main/java/com/amazonaws/services/kinesis/clientlibrary/lib/worker/KinesisClientLibConfiguration.java">AWS Kinesis Client Library configuration</a> associated with the <span class="stream">stream-name</span>.</td>
+=======
+                    <td class="property" id="kinesis-stream-region">systems.<span class="system">system-name</span>.<br>streams.<span class="stream">stream-id</span>.<br>aws.region</td>
+                    <td class="default"></td>
+                    <td class="description">Region of the associated <span class="stream">stream-id</span>. Required to access the Kinesis data stream.</td>
+                </tr>
+
+                <tr>
+                    <td class="property" id="kinesis-stream-access-key">systems.<span class="system">system-name</span>.<br>streams.<span class="stream">stream-id</span>.<br>aws.accessKey</td>
+                    <td class="default"></td>
+                    <td class="description">AccessKey of the associated <span class="stream">stream-id</span>. Required to access Kinesis data stream.</td>
+                </tr>
+
+                <tr>
+                    <td class="property" id="kinesis-stream-secret-key">systems.<span class="system">system-name</span>.<br>streams.<span class="stream">stream-id</span>.<br>aws.secretKey</td>
+                    <td class="default"></td>
+                    <td class="description">SecretKey of the associated <span class="stream">stream-id</span>. Required to access the Kinesis data stream.</td>
+                </tr>
+
+                <tr>
+                    <td class="property" id="kinesis-stream-aws-kcl-configs">systems.<span class="system">system-name</span>.<br>streams.<span class="stream">stream-id</span>.<br>aws.kcl.*</td>
+                    <td class="default"></td>
+                    <td class="description"><a href="https://github.com/awslabs/amazon-kinesis-client/blob/master/src/main/java/com/amazonaws/services/kinesis/clientlibrary/lib/worker/KinesisClientLibConfiguration.java">AWS Kinesis Client Library configuration</a> associated with the <span class="stream">stream-id</span>.</td>
+>>>>>>> 95781c0f2c6d1ef1eee0171f5b0e15a23af40f24
                 </tr>
 
                 <tr>
